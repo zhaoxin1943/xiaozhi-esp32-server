@@ -87,4 +87,12 @@ public class SwaggerConfig {
                 .version("3.0")
                 .termsOfService("https://127.0.0.1"));
     }
+
+    @Bean
+    public GroupedOpenApi studentApi() {
+        return GroupedOpenApi.builder()
+                .group("student") // 这个 group 名称会对应你 Controller 上的 @Tag(name = "学生管理")
+                .pathsToMatch("/student/**") // <<-- 匹配 /student 开头的路径
+                .build();
+    }
 }
