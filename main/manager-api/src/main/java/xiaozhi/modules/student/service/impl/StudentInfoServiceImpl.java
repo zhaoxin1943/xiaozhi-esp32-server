@@ -20,4 +20,20 @@ public class StudentInfoServiceImpl extends BaseServiceImpl<StudentDao, StudentI
         queryWrapper.eq("device_id", deviceId);
         return studentDao.selectOne(queryWrapper);
     }
+
+    @Override
+    public void insertStudent(String deviceId) {
+        StudentInfoEntity studentInfoEntity = new StudentInfoEntity();
+        studentInfoEntity.setDeviceId(deviceId);
+        studentDao.insert(studentInfoEntity);
+    }
+
+    @Override
+    public void deleteStudentByDeviceId(String deviceId) {
+        QueryWrapper<StudentInfoEntity> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("device_id", deviceId);
+        StudentInfoEntity studentInfoEntity = studentDao.selectOne(queryWrapper);
+        studentInfoEntity.setDeleted(true);
+        studentDao.updateById(studentInfoEntity);
+    }
 }

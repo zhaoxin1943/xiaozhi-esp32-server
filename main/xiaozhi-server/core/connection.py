@@ -394,7 +394,7 @@ class ConnectionHandler:
 
     async def _get_student_info(self,device_id:str):
         student_info = await get_student_info(device_id)
-        print(student_info)
+        
 
     async def _initialize_private_config(self):
         """如果是从配置文件获取，则进行二次实例化"""
@@ -875,9 +875,6 @@ class ConnectionHandler:
                     break
                 type, text, audio_data, report_time = item
                 try:
-                    # 检查线程池状态
-                    if self.executor is None:
-                        continue
                     await self._process_report(type, text, audio_data, report_time)
                 except Exception as e:
                     self.logger.bind(tag=TAG).error(f"聊天记录上报线程异常: {e}")

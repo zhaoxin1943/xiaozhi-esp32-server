@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -42,6 +43,7 @@ import xiaozhi.modules.device.service.DeviceService;
 import xiaozhi.modules.device.service.OtaService;
 import xiaozhi.modules.device.vo.UserShowDeviceListVO;
 import xiaozhi.modules.security.user.SecurityUser;
+import xiaozhi.modules.student.service.StudentInfoService;
 import xiaozhi.modules.sys.service.SysParamsService;
 import xiaozhi.modules.sys.service.SysUserUtilService;
 
@@ -53,6 +55,7 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
     private final DeviceDao deviceDao;
     private final SysUserUtilService sysUserUtilService;
     private final SysParamsService sysParamsService;
+    private final StudentInfoService studentInfoService;
     private final RedisUtils redisUtils;
     private final OtaService otaService;
 
@@ -127,12 +130,14 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
         // 清理redis缓存
         redisUtils.delete(cacheDeviceKey);
         redisUtils.delete(deviceKey);
+        // 自动创建跟当前设备绑定的学生数据
+        studentInfoService.insertStudent(deviceId);
         return true;
     }
 
     @Override
     public DeviceReportRespDTO checkDeviceActive(String macAddress, String clientId,
-            DeviceReportReqDTO deviceReport) {
+                                                 DeviceReportReqDTO deviceReport) {
         DeviceReportRespDTO response = new DeviceReportRespDTO();
         response.setServer_time(buildServerTime());
 
@@ -196,15 +201,32 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
         QueryWrapper<DeviceEntity> wrapper = new QueryWrapper<>();
         wrapper.eq("user_id", userId);
         wrapper.eq("agent_id", agentId);
+        wrapper.eq("deleted", false);
         return baseDao.selectList(wrapper);
     }
 
     @Override
     public void unbindDevice(Long userId, String deviceId) {
-        UpdateWrapper<DeviceEntity> wrapper = new UpdateWrapper<>();
-        wrapper.eq("user_id", userId);
-        wrapper.eq("id", deviceId);
-        baseDao.delete(wrapper);
+        DeviceEntity original = baseDao.selectById(deviceId);
+        if (original == null || Boolean.TRUE.equals(original.getDeleted())) {
+            return;
+        }
+
+        UUID suffix = UUID.randomUUID();
+        String tag = "_" + suffix.toString().substring(0, 8);
+
+        DeviceEntity archived = new DeviceEntity();
+        BeanUtils.copyProperties(original, archived);
+        archived.setId(original.getId() + tag);
+        archived.setMacAddress(original.getMacAddress() + tag);
+        archived.setDeleted(true);
+        archived.setUpdateDate(new Date());
+
+        baseDao.insert(archived);
+
+        baseDao.deleteById(deviceId);
+
+        studentInfoService.deleteStudentByDeviceId(deviceId);
     }
 
     @Override
@@ -384,7 +406,7 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
 
     /**
      * 比较两个版本号
-     * 
+     *
      * @param version1 版本1
      * @param version2 版本2
      * @return 如果version1 > version2返回1，version1 < version2返回-1，相等返回0

@@ -1,19 +1,19 @@
 package xiaozhi.modules.student.enums;
 import com.baomidou.mybatisplus.annotation.EnumValue;
+import com.baomidou.mybatisplus.annotation.IEnum;
 
-public enum StudentGender {
-    @EnumValue
+public enum StudentGender implements IEnum<Integer> {
     GIRL(0),
-    @EnumValue
     BOY(1);
 
+    @EnumValue
     private final int value;
 
     StudentGender(int value) {
         this.value = value;
     }
 
-    public int getValue() {
+    public Integer getValue() {
         return value;
     }
 }
