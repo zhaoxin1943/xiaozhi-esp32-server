@@ -5,7 +5,7 @@ from plugins_func.register import register_function, ToolType, ActionResponse, A
 from core.utils.util import get_ip_info
 
 TAG = __name__
-logger = setup_logging()
+
 
 GET_WEATHER_FUNCTION_DESC = {
     "type": "function",
@@ -160,6 +160,7 @@ def get_weather(conn, location: str = None, lang: str = "zh_CN"):
         # 通过客户端IP解析城市
         if client_ip:
             # 动态解析IP对应的城市信息
+            logger = setup_logging()
             ip_info = get_ip_info(client_ip, logger)
             location = ip_info.get("city") if ip_info and "city" in ip_info else None
         else:

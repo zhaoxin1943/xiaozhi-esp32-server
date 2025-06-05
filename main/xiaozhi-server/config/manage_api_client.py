@@ -2,7 +2,7 @@ import os
 import time
 import base64
 from typing import Optional, Dict
-
+import asyncio
 import httpx
 
 TAG = __name__
@@ -20,19 +20,29 @@ class DeviceBindException(Exception):
 
 class ManageApiClient:
     _instance = None
-    _client = None
+    _client = None  # 存储 httpx.AsyncClient 实例
     _secret = None
+    _init_task = None # 用于确保 _init_client 只被执行一次的 Task
 
-    def __new__(cls, config):
+    def __new__(cls):
         """单例模式确保全局唯一实例，并支持传入配置参数"""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._init_client(config)
+            # 在 __new__ 中启动一个异步初始化任务，但它不能直接是 await
         return cls._instance
 
     @classmethod
-    def _init_client(cls, config):
-        """初始化持久化连接池"""
+    async def initialize(cls, config):
+        if cls._instance is None:
+            cls._instance = cls.__new__(cls)
+
+        if cls._init_task is None:
+            cls._init_task = asyncio.create_task(cls._init_client(config))
+        await cls._init_task
+
+    @classmethod
+    async def _init_client(cls, config):
+        """异步初始化持久化连接池"""
         cls.config = config.get("manager-api")
 
         if not cls.config:
@@ -49,7 +59,8 @@ class ManageApiClient:
         cls.retry_delay = cls.config.get("retry_delay", 10)  # 初始重试延迟(秒)
         # NOTE(goody): 2025/4/16 http相关资源统一管理，后续可以增加线程池或者超时
         # 后续也可以统一配置apiToken之类的走通用的Auth
-        cls._client = httpx.Client(
+        # 核心修改：使用 httpx.AsyncClient
+        cls._client = httpx.AsyncClient( # 修改为 httpx.AsyncClient
             base_url=cls.config.get("url"),
             headers={
                 "User-Agent": f"PythonClient/2.0 (PID:{os.getpid()})",
@@ -60,10 +71,11 @@ class ManageApiClient:
         )
 
     @classmethod
-    def _request(cls, method: str, endpoint: str, **kwargs) -> Dict:
+    async def _request(cls, method: str, endpoint: str, **kwargs) -> Dict:
         """发送单次HTTP请求并处理响应"""
         endpoint = endpoint.lstrip("/")
-        response = cls._client.request(method, endpoint, **kwargs)
+        # 核心修改：使用 await 调用异步方法
+        response = await cls._client.request(method, endpoint, **kwargs)
         response.raise_for_status()
 
         result = response.json()
@@ -96,14 +108,14 @@ class ManageApiClient:
         return False
 
     @classmethod
-    def _execute_request(cls, method: str, endpoint: str, **kwargs) -> Dict:
+    async def _execute_request(cls, method: str, endpoint: str, **kwargs) -> Dict:
         """带重试机制的请求执行器"""
         retry_count = 0
 
         while retry_count <= cls.max_retries:
             try:
-                # 执行请求
-                return cls._request(method, endpoint, **kwargs)
+                # 核心修改：使用 await 调用异步方法
+                return await cls._request(method, endpoint, **kwargs)
             except Exception as e:
                 # 判断是否应该重试
                 if retry_count < cls.max_retries and cls._should_retry(e):
@@ -111,30 +123,31 @@ class ManageApiClient:
                     print(
                         f"{method} {endpoint} 请求失败，将在 {cls.retry_delay:.1f} 秒后进行第 {retry_count} 次重试"
                     )
-                    time.sleep(cls.retry_delay)
+                    # 核心修改：使用 await asyncio.sleep 代替 time.sleep
+                    await asyncio.sleep(cls.retry_delay)
                     continue
                 else:
                     # 不重试，直接抛出异常
                     raise
 
     @classmethod
-    def safe_close(cls):
+    async def safe_close(cls):
         """安全关闭连接池"""
         if cls._client:
-            cls._client.close()
+            await cls._client.aclose()
             cls._instance = None
+            cls._init_task = None
 
-
-def get_server_config() -> Optional[Dict]:
+async def get_server_config() -> Optional[Dict]:
     """获取服务器基础配置"""
-    return ManageApiClient._instance._execute_request("POST", "/config/server-base")
+    return await ManageApiClient._instance._execute_request("POST", "/config/server-base")
 
 
-def get_agent_models(
+async def get_agent_models(
     mac_address: str, client_id: str, selected_module: Dict
 ) -> Optional[Dict]:
     """获取代理模型配置"""
-    return ManageApiClient._instance._execute_request(
+    return await ManageApiClient._instance._execute_request(
         "POST",
         "/config/agent-models",
         json={
@@ -145,9 +158,9 @@ def get_agent_models(
     )
 
 
-def save_mem_local_short(mac_address: str, short_momery: str) -> Optional[Dict]:
+async def save_mem_local_short(mac_address: str, short_momery: str) -> Optional[Dict]:
     try:
-        return ManageApiClient._instance._execute_request(
+        return await ManageApiClient._instance._execute_request(
             "PUT",
             f"/agent/saveMemory/" + mac_address,
             json={
@@ -159,14 +172,14 @@ def save_mem_local_short(mac_address: str, short_momery: str) -> Optional[Dict]:
         return None
 
 
-def report(
+async def report(
     mac_address: str, session_id: str, chat_type: int, content: str, audio, report_time
 ) -> Optional[Dict]:
     """带熔断的业务方法示例"""
     if not content or not ManageApiClient._instance:
         return None
     try:
-        return ManageApiClient._instance._execute_request(
+        return await ManageApiClient._instance._execute_request(
             "POST",
             f"/agent/chat-history/report",
             json={
@@ -185,9 +198,9 @@ def report(
         return None
 
 
-def init_service(config):
-    ManageApiClient(config)
+async def init_service(config):
+    await ManageApiClient.initialize(config)
 
 
-def manage_api_http_safe_close():
-    ManageApiClient.safe_close()
+async def manage_api_http_safe_close():
+    await ManageApiClient.safe_close()

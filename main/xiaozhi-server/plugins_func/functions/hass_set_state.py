@@ -5,7 +5,7 @@ import asyncio
 import requests
 
 TAG = __name__
-logger = setup_logging()
+
 
 hass_set_state_function_desc = {
     "type": "function",
@@ -58,6 +58,7 @@ def hass_set_state(conn, entity_id='', state={}):
         ha_response = future.result()
         return ActionResponse(Action.REQLLM, ha_response, None)
     except Exception as e:
+        logger = setup_logging()
         logger.bind(tag=TAG).error(f"处理设置属性意图错误: {e}")
 
 

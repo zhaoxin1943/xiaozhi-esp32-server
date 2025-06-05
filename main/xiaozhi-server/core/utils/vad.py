@@ -5,7 +5,6 @@ from core.providers.vad.base import VADProviderBase
 from config.logger import setup_logging
 
 TAG = __name__
-logger = setup_logging()
 
 
 def create_instance(class_name: str, *args, **kwargs) -> VADProviderBase:

@@ -4,14 +4,13 @@ import signal
 import asyncio
 from aioconsole import ainput
 from config.settings import load_config
-from config.logger import setup_logging
+from config.logger import setup_logging, async_setup_logging
 from core.utils.util import get_local_ip
 from core.http_server import SimpleHttpServer
 from core.websocket_server import WebSocketServer
 from core.utils.util import check_ffmpeg_installed
 
 TAG = __name__
-logger = setup_logging()
 
 
 async def wait_for_exit() -> None:
@@ -43,8 +42,10 @@ async def monitor_stdin():
 
 
 async def main():
+    await async_setup_logging()
+    logger = setup_logging()
     check_ffmpeg_installed()
-    config = load_config()
+    config = await load_config()
 
     # 默认使用manager-api的secret作为auth_key
     # 如果secret为空，则生成随机密钥
@@ -65,7 +66,7 @@ async def main():
     ota_task = asyncio.create_task(ota_server.start())
 
     read_config_from_api = config.get("read_config_from_api", False)
-    port = int(config["server"].get("http_port", 8003))
+    port = int(config["server"].get("port", 8003))
     if not read_config_from_api:
         logger.bind(tag=TAG).info(
             "OTA接口是\t\thttp://{}:{}/xiaozhi/ota/",

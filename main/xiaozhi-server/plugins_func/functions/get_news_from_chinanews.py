@@ -6,7 +6,7 @@ from config.logger import setup_logging
 from plugins_func.register import register_function, ToolType, ActionResponse, Action
 
 TAG = __name__
-logger = setup_logging()
+
 
 GET_NEWS_FROM_CHINANEWS_FUNCTION_DESC = {
     "type": "function",
@@ -78,6 +78,7 @@ def fetch_news_from_rss(rss_url):
 
         return news_items
     except Exception as e:
+        logger = setup_logging()
         logger.bind(tag=TAG).error(f"获取RSS新闻失败: {e}")
         return []
 
@@ -108,6 +109,7 @@ def fetch_news_detail(url):
             )
             return content[:2000]  # 限制长度
     except Exception as e:
+        logger = setup_logging()
         logger.bind(tag=TAG).error(f"获取新闻详情失败: {e}")
         return "无法获取详细内容"
 
@@ -169,7 +171,7 @@ def get_news_from_chinanews(
                 return ActionResponse(
                     Action.REQLLM, "抱歉，该新闻没有可用的链接获取详细内容。", None
                 )
-
+            logger = setup_logging()
             logger.bind(tag=TAG).debug(f"获取新闻详情: {title}, URL={link}")
 
             # 获取新闻详情
@@ -207,7 +209,7 @@ def get_news_from_chinanews(
         rss_url = default_rss_url
         if mapped_category and mapped_category in rss_config.get("category_urls", {}):
             rss_url = rss_config["category_urls"][mapped_category]
-
+        logger = setup_logging()
         logger.bind(tag=TAG).info(
             f"获取新闻: 原始类别={category}, 映射类别={mapped_category}, URL={rss_url}"
         )

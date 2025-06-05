@@ -4,7 +4,7 @@ from core.handle.iotHandle import get_iot_status, send_iot_conn
 import asyncio
 
 TAG = __name__
-logger = setup_logging()
+
 
 
 async def _get_device_status(conn, device_name, device_type, property_name):
@@ -48,6 +48,7 @@ async def _set_device_property(
 
 def _handle_device_action(conn, func, success_message, error_message, *args, **kwargs):
     """处理设备操作的通用函数"""
+    logger = setup_logging()
     future = asyncio.run_coroutine_threadsafe(func(conn, *args, **kwargs), conn.loop)
     try:
         result = future.result()

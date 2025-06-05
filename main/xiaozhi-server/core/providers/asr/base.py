@@ -12,7 +12,6 @@ from core.handle.reportHandle import enqueue_asr_report
 from core.handle.receiveAudioHandle import startToChat
 
 TAG = __name__
-logger = setup_logging()
 
 
 class ASRProviderBase(ABC):
@@ -93,6 +92,7 @@ class ASRProviderBase(ABC):
     @staticmethod
     def decode_opus(opus_data: List[bytes]) -> bytes:
         """将Opus音频数据解码为PCM数据"""
+        logger = setup_logging()
         try:
             decoder = opuslib_next.Decoder(16000, 1)  # 16kHz, 单声道
             pcm_data = []

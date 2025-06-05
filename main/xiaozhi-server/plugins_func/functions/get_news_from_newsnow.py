@@ -6,7 +6,7 @@ from plugins_func.register import register_function, ToolType, ActionResponse, A
 from markitdown import MarkItDown
 
 TAG = __name__
-logger = setup_logging()
+
 
 # 新闻来源字典，包含名称和对应的API ID
 NEWS_SOURCES = {
@@ -58,6 +58,7 @@ GET_NEWS_FROM_NEWSNOW_FUNCTION_DESC = {
 
 def fetch_news_from_api(conn, source="thepaper"):
     """从API获取新闻列表"""
+    logger = setup_logging()
     try:
         api_url = f"https://newsnow.busiyi.world/api/s?id={source}"
         if conn.config["plugins"].get("get_news_from_newsnow") and conn.config[
@@ -83,6 +84,7 @@ def fetch_news_from_api(conn, source="thepaper"):
 
 def fetch_news_detail(url):
     """获取新闻详情页内容并使用MarkItDown清理HTML"""
+    logger = setup_logging()
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
@@ -114,6 +116,7 @@ def get_news_from_newsnow(
     conn, source: str = "thepaper", detail: bool = False, lang: str = "zh_CN"
 ):
     """获取新闻并随机选择一条进行播报，或获取上一条新闻的详细内容"""
+    logger = setup_logging()
     try:
         # 如果detail为True，获取上一条新闻的详细内容
         detail = str(detail).lower() == "true"

@@ -20,7 +20,7 @@ def read_config(config_path):
     return config
 
 
-def load_config():
+async def load_config():
     """加载配置文件"""
     global _config_cache
     if _config_cache is not None:
@@ -34,7 +34,7 @@ def load_config():
     custom_config = read_config(custom_config_path)
 
     if custom_config.get("manager-api", {}).get("url"):
-        config = get_config_from_api(custom_config)
+        config = await get_config_from_api(custom_config)
     else:
         # 合并配置
         config = merge_configs(default_config, custom_config)
@@ -44,13 +44,13 @@ def load_config():
     return config
 
 
-def get_config_from_api(config):
+async def get_config_from_api(config):
     """从Java API获取配置"""
     # 初始化API客户端
-    init_service(config)
+    await init_service(config)
 
     # 获取服务器配置
-    config_data = get_server_config()
+    config_data = await get_server_config()
     if config_data is None:
         raise Exception("Failed to fetch server config from API")
 
@@ -67,13 +67,14 @@ def get_config_from_api(config):
             "http_port": config["server"].get("http_port", ""),
             "vision_explain": config["server"].get("vision_explain", ""),
             "auth_key": config["server"].get("auth_key", ""),
+            "auth": config["server"].get("auth", "")
         }
     return config_data
 
 
-def get_private_config_from_api(config, device_id, client_id):
+async def get_private_config_from_api(config, device_id, client_id):
     """从Java API获取私有配置"""
-    return get_agent_models(device_id, client_id, config["selected_module"])
+    return await get_agent_models(device_id, client_id, config["selected_module"])
 
 
 def ensure_directories(config):

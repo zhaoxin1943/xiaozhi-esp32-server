@@ -24,7 +24,6 @@ from core.providers.tts.dto.dto import (
 import traceback
 
 TAG = __name__
-logger = setup_logging()
 
 
 class TTSProviderBase(ABC):
@@ -37,7 +36,7 @@ class TTSProviderBase(ABC):
         self.tts_text_queue = queue.Queue()
         self.tts_audio_queue = queue.Queue()
         self.tts_audio_first_sentence = True
-
+        self.logger = setup_logging()
         self.tts_text_buff = []
         self.punctuations = (
             "。",
@@ -84,7 +83,7 @@ class TTSProviderBase(ABC):
                 try:
                     asyncio.run(self.text_to_speak(text, tmp_file))
                 except Exception as e:
-                    logger.bind(tag=TAG).warning(
+                    self.logger.bind(tag=TAG).warning(
                         f"语音生成失败{5 - max_repeat_time + 1}次: {text}，错误: {e}"
                     )
                     # 未执行成功，删除文件
@@ -93,17 +92,17 @@ class TTSProviderBase(ABC):
                     max_repeat_time -= 1
 
             if max_repeat_time > 0:
-                logger.bind(tag=TAG).info(
+                self.logger.bind(tag=TAG).info(
                     f"语音生成成功: {text}:{tmp_file}，重试{5 - max_repeat_time}次"
                 )
             else:
-                logger.bind(tag=TAG).error(
+                self.logger.bind(tag=TAG).error(
                     f"语音生成失败: {text}，请检查网络或服务是否正常"
                 )
 
             return tmp_file
         except Exception as e:
-            logger.bind(tag=TAG).error(f"Failed to generate TTS file: {e}")
+            self.logger.bind(tag=TAG).error(f"Failed to generate TTS file: {e}")
             return None
 
     @abstractmethod
@@ -179,7 +178,7 @@ class TTSProviderBase(ABC):
             try:
                 message = self.tts_text_queue.get(timeout=1)
                 if self.conn.client_abort:
-                    logger.bind(tag=TAG).info("收到打断信息，终止TTS文本处理线程")
+                    self.logger.bind(tag=TAG).info("收到打断信息，终止TTS文本处理线程")
                     continue
                 if message.sentence_type == SentenceType.FIRST:
                     # 初始化参数
@@ -216,7 +215,7 @@ class TTSProviderBase(ABC):
             except queue.Empty:
                 continue
             except Exception as e:
-                logger.bind(tag=TAG).error(
+                self.logger.bind(tag=TAG).error(
                     f"处理TTS文本失败: {str(e)}, 类型: {type(e).__name__}, 堆栈: {traceback.format_exc()}"
                 )
                 continue
@@ -242,7 +241,7 @@ class TTSProviderBase(ABC):
                     add_device_output(self.conn.headers.get("device-id"), len(text))
                 enqueue_tts_report(self.conn, text, audio_datas)
             except Exception as e:
-                logger.bind(tag=TAG).error(
+                self.logger.bind(tag=TAG).error(
                     f"audio_play_priority priority_thread: {text} {e}"
                 )
 

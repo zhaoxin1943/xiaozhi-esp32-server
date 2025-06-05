@@ -5,7 +5,7 @@ import asyncio
 import requests
 
 TAG = __name__
-logger = setup_logging()
+
 
 hass_play_music_function_desc = {
     "type": "function",
@@ -41,6 +41,7 @@ def hass_play_music(conn, entity_id='', media_content_id='random'):
         ha_response = future.result()
         return ActionResponse(action=Action.RESPONSE, result="退出意图已处理", response=ha_response)
     except Exception as e:
+        logger = setup_logging()
         logger.bind(tag=TAG).error(f"处理音乐意图错误: {e}")
 
 

@@ -5,7 +5,7 @@ import asyncio
 import requests
 
 TAG = __name__
-logger = setup_logging()
+
 
 hass_get_state_function_desc = {
     "type": "function",
@@ -29,7 +29,6 @@ hass_get_state_function_desc = {
 @register_function("hass_get_state", hass_get_state_function_desc, ToolType.SYSTEM_CTL)
 def hass_get_state(conn, entity_id=''):
     try:
-
         future = asyncio.run_coroutine_threadsafe(
             handle_hass_get_state(conn, entity_id),
             conn.loop
@@ -37,6 +36,7 @@ def hass_get_state(conn, entity_id=''):
         ha_response = future.result()
         return ActionResponse( Action.REQLLM, ha_response , None )
     except Exception as e:
+        logger = setup_logging()
         logger.bind(tag=TAG).error(f"处理设置属性意图错误: {e}")
 
 
@@ -51,6 +51,7 @@ async def handle_hass_get_state(conn, entity_id):
     }
     response = requests.get(url, headers=headers)
     if response.status_code == 200:
+        logger = setup_logging()
         responsetext = '设备状态:' + response.json()['state'] + ' '
         logger.bind(tag=TAG).info(f"api返回内容: {response.json()}")
 

@@ -2,7 +2,7 @@ from plugins_func.register import register_function,ToolType, ActionResponse, Ac
 from config.logger import setup_logging
 
 TAG = __name__
-logger = setup_logging()
+
 
 prompts = {
     "英语老师":"""我是一个叫{{assistant_name}}(Lily)的英语老师，我会讲中文和英文，发音标准。
@@ -48,6 +48,7 @@ change_role_function_desc = {
 @register_function('change_role', change_role_function_desc, ToolType.CHANGE_SYS_PROMPT)
 def change_role(conn, role: str, role_name: str):
     """切换角色"""
+    logger = setup_logging()
     if role not in prompts:
         return ActionResponse(action=Action.RESPONSE, result="切换角色失败", response="不支持的角色")
     new_prompt = prompts[role].replace("{{assistant_name}}", role_name)

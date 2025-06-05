@@ -8,7 +8,7 @@ TTS上报功能已集成到ConnectionHandler类中。
 
 具体实现请参考core/connection.py中的相关代码。
 """
-
+import asyncio
 import time
 
 import opuslib_next
@@ -18,7 +18,7 @@ from config.manage_api_client import report as manage_report
 TAG = __name__
 
 
-def report(conn, type, text, opus_data, report_time):
+async def report(conn, type, text, opus_data, report_time,executor):
     """执行聊天记录上报操作
 
     Args:
@@ -28,13 +28,17 @@ def report(conn, type, text, opus_data, report_time):
         opus_data: opus音频数据
         report_time: 上报时间
     """
+    loop = asyncio.get_running_loop()
     try:
+        audio_data = None
         if opus_data:
-            audio_data = opus_to_wav(conn, opus_data)
-        else:
-            audio_data = None
+            audio_data = await loop.run_in_executor(
+                executor,
+                opus_to_wav,
+                conn, opus_data
+            )
         # 执行上报
-        manage_report(
+        await manage_report(
             mac_address=conn.device_id,
             session_id=conn.session_id,
             chat_type=type,

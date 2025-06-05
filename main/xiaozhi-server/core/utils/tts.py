@@ -4,7 +4,6 @@ import sys
 from config.logger import setup_logging
 import importlib
 
-logger = setup_logging()
 
 
 def create_instance(class_name, *args, **kwargs):

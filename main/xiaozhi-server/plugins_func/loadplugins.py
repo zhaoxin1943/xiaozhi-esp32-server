@@ -4,7 +4,7 @@ from config.logger import setup_logging
 
 TAG = __name__
 
-logger = setup_logging()
+
 
 def auto_import_modules(package_name):
     """

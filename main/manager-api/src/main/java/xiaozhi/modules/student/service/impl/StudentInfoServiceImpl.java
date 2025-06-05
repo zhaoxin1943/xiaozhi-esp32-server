@@ -15,10 +15,9 @@ public class StudentInfoServiceImpl extends BaseServiceImpl<StudentDao, StudentI
     private final StudentDao studentDao;
 
     @Override
-    public boolean hasStudentByDeviceId(String deviceId) {
+    public StudentInfoEntity getStudentByDeviceId(String deviceId) {
         QueryWrapper<StudentInfoEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("device_id", deviceId);
-        Long count = studentDao.selectCount(queryWrapper);
-        return count != null && count > 0;
+        return studentDao.selectOne(queryWrapper);
     }
 }

@@ -187,7 +187,7 @@ class MemoryProvider(MemoryProviderBase):
                 max_tokens=2000,
                 temperature=0.2,
             )
-            save_mem_local_short(self.role_id, result)
+            await save_mem_local_short(self.role_id, result)
         logger.bind(tag=TAG).info(f"Save memory successful - Role: {self.role_id}")
 
         return self.short_memory

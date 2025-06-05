@@ -31,6 +31,7 @@ from core.utils.dialogue import Message, Dialogue
 from core.providers.asr.dto.dto import InterfaceType
 from core.handle.textHandle import handleTextMessage
 from core.handle.functionHandler import FunctionHandler
+from custom.request import get_student_info
 from plugins_func.loadplugins import auto_import_modules
 from plugins_func.register import Action, ActionResponse
 from core.auth import AuthMiddleware, AuthenticationError
@@ -169,6 +170,7 @@ class ConnectionHandler:
                 if "device-id" in query_params:
                     self.headers["device-id"] = query_params["device-id"][0]
                     self.headers["client-id"] = query_params["client-id"][0]
+                    self.headers["authorization"] = f"Bearer {query_params['token'][0]}"
                 else:
                     await ws.send("端口正常，如需测试连接，请使用test_page.html")
                     await self.close(ws)
@@ -194,10 +196,12 @@ class ConnectionHandler:
             await self.websocket.send(json.dumps(self.welcome_msg))
 
             # 获取差异化配置
-            self._initialize_private_config()
+            await self._initialize_private_config()
+            # 判断是否已经完成必要的信息录入
+            await self._get_student_info(self.device_id)
             # 异步初始化
-            self.executor.submit(self._initialize_components)
-
+            # self.executor.submit(self._initialize_components)
+            await self._initialize_components()
             try:
                 async for message in self.websocket:
                     await self._route_message(message)
@@ -304,12 +308,12 @@ class ConnectionHandler:
                 )
             )
 
-    def _initialize_components(self):
+    async def _initialize_components(self):
         try:
             self.selected_module_str = build_module_string(
                 self.config.get("selected_module", {})
             )
-            update_module_string(self.selected_module_str)
+            await update_module_string(self.selected_module_str)
             """初始化组件"""
             if self.config.get("prompt") is not None:
                 self.prompt = self.config["prompt"]
@@ -339,23 +343,31 @@ class ConnectionHandler:
             """加载意图识别"""
             self._initialize_intent()
             """初始化上报线程"""
-            self._init_report_threads()
+            await self._init_report_threads()
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"实例化组件失败: {e}")
 
-    def _init_report_threads(self):
+    async def _init_report_threads(self):
         """初始化ASR和TTS上报线程"""
         if not self.read_config_from_api or self.need_bind:
             return
         if self.chat_history_conf == 0:
             return
         if self.report_thread is None or not self.report_thread.is_alive():
+            def run_async_in_thread():
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(self._report_worker())
+                except Exception as e:
+                    self.logger.bind(tag=TAG).error(f"线程中运行asyncio任务时发生异常: {e}")
+                finally:
+                    loop.close()
             self.report_thread = threading.Thread(
-                target=self._report_worker, daemon=True
+                target=run_async_in_thread, daemon=True
             )
             self.report_thread.start()
             self.logger.bind(tag=TAG).info("TTS上报线程已启动")
-
     def _initialize_tts(self):
         """初始化TTS"""
         tts = None
@@ -380,14 +392,18 @@ class ConnectionHandler:
 
         return asr
 
-    def _initialize_private_config(self):
+    async def _get_student_info(self,device_id:str):
+        student_info = await get_student_info(device_id)
+        print(student_info)
+
+    async def _initialize_private_config(self):
         """如果是从配置文件获取，则进行二次实例化"""
         if not self.read_config_from_api:
             return
         """从接口获取差异化的配置进行二次实例化，非全量重新实例化"""
         try:
             begin_time = time.time()
-            private_config = get_private_config_from_api(
+            private_config = await get_private_config_from_api(
                 self.config,
                 self.headers.get("device-id"),
                 self.headers.get("client-id", self.headers.get("device-id")),
@@ -849,7 +865,7 @@ class ConnectionHandler:
         else:
             pass
 
-    def _report_worker(self):
+    async def _report_worker(self):
         """聊天记录上报工作线程"""
         while not self.stop_event.is_set():
             try:
@@ -862,10 +878,7 @@ class ConnectionHandler:
                     # 检查线程池状态
                     if self.executor is None:
                         continue
-                    # 提交任务到线程池
-                    self.executor.submit(
-                        self._process_report, type, text, audio_data, report_time
-                    )
+                    await self._process_report(type, text, audio_data, report_time)
                 except Exception as e:
                     self.logger.bind(tag=TAG).error(f"聊天记录上报线程异常: {e}")
             except queue.Empty:
@@ -875,11 +888,11 @@ class ConnectionHandler:
 
         self.logger.bind(tag=TAG).info("聊天记录上报线程已退出")
 
-    def _process_report(self, type, text, audio_data, report_time):
+    async def _process_report(self, type, text, audio_data, report_time):
         """处理上报任务"""
         try:
             # 执行上报（传入二进制数据）
-            report(self, type, text, audio_data, report_time)
+            await report(self, type, text, audio_data, report_time,self.executor)
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"上报处理异常: {e}")
         finally:

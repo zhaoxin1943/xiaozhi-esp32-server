@@ -6,7 +6,7 @@ default_config_file = "config.yaml"
 config_file_valid = False
 
 
-def check_config_file():
+async def check_config_file():
     global config_file_valid
     if config_file_valid:
         return
@@ -20,7 +20,7 @@ def check_config_file():
         )
 
     # 检查是否从API读取配置
-    config = load_config()
+    config = await load_config()
     if config.get("read_config_from_api", False):
         print("从API读取配置")
         old_config_origin = read_config(custom_config_file)

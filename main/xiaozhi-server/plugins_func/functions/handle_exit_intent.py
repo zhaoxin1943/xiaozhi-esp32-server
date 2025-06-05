@@ -2,7 +2,7 @@ from plugins_func.register import register_function, ToolType, ActionResponse, A
 from config.logger import setup_logging
 
 TAG = __name__
-logger = setup_logging()
+
 
 handle_exit_intent_function_desc = {
     "type": "function",
@@ -28,6 +28,7 @@ handle_exit_intent_function_desc = {
 )
 def handle_exit_intent(conn, say_goodbye: str | None = None):
     # 处理退出意图
+    logger = setup_logging()
     try:
         if say_goodbye is None:
             say_goodbye = "再见，祝您生活愉快！"

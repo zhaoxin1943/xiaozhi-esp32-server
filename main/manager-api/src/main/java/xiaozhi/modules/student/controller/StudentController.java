@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xiaozhi.common.utils.Result;
+import xiaozhi.modules.student.entity.StudentInfoEntity;
 import xiaozhi.modules.student.service.StudentInfoService;
 
 @Tag(name = "学生管理")
@@ -19,10 +20,9 @@ public class StudentController {
     private final StudentInfoService studentInfoService;
 
     @GetMapping("/{deviceId}")
-    @Operation(summary = "查询是否录入过学生信息")
-    @RequiresPermissions("sys:role:normal")
-    public Result<Boolean> checkStudentExistsByDeviceId(@PathVariable String deviceId) {
-        boolean has_student = studentInfoService.hasStudentByDeviceId(deviceId);
-        return new Result<Boolean>().ok(has_student);
+    @Operation(summary = "获取该设备绑定的学生信息")
+    public Result<StudentInfoEntity> getStudentInfoByDeviceId(@PathVariable String deviceId) {
+        StudentInfoEntity student_info = studentInfoService.getStudentByDeviceId(deviceId);
+        return new Result<StudentInfoEntity>().ok(student_info);
     }
 }

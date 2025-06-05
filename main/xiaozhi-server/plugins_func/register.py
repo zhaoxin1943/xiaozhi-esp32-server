@@ -1,9 +1,9 @@
-from config.logger import setup_logging
 from enum import Enum
+
+from config.logger import setup_logging
 
 TAG = __name__
 
-logger = setup_logging()
 
 
 class ToolType(Enum):
@@ -81,10 +81,8 @@ all_function_registry = {}
 
 def register_function(name, desc, type=None):
     """注册函数到函数注册字典的装饰器"""
-
     def decorator(func):
         all_function_registry[name] = FunctionItem(name, desc, func, type)
-        logger.bind(tag=TAG).debug(f"函数 '{name}' 已加载，可以注册使用")
         return func
 
     return decorator
@@ -92,7 +90,7 @@ def register_function(name, desc, type=None):
 
 def register_device_function(name, desc, type=None):
     """注册设备级别的函数到函数注册字典的装饰器"""
-
+    logger = setup_logging()
     def decorator(func):
         logger.bind(tag=TAG).debug(f"设备函数 '{name}' 已加载")
         return func

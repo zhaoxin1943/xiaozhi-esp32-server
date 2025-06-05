@@ -3,7 +3,7 @@ from config.logger import setup_logging
 from core.utils import tts, llm, intent, memory, vad, asr
 
 TAG = __name__
-logger = setup_logging()
+
 
 
 def initialize_modules(

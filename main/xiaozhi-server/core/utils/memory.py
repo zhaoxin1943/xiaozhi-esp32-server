@@ -3,7 +3,6 @@ import sys
 import importlib
 from config.logger import setup_logging
 
-logger = setup_logging()
 
 
 def create_instance(class_name, *args, **kwargs):

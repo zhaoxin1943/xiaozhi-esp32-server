@@ -6,10 +6,8 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.abspath(os.path.join(current_dir, "..", ".."))
 sys.path.insert(0, project_root)
 
-from config.logger import setup_logging
 import importlib
 
-logger = setup_logging()
 
 
 def create_instance(class_name, *args, **kwargs):
