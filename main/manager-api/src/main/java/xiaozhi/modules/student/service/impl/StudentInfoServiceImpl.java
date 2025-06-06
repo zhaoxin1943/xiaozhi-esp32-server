@@ -18,6 +18,7 @@ public class StudentInfoServiceImpl extends BaseServiceImpl<StudentDao, StudentI
     public StudentInfoEntity getStudentByDeviceId(String deviceId) {
         QueryWrapper<StudentInfoEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("device_id", deviceId);
+        queryWrapper.eq("deleted", 0);
         return studentDao.selectOne(queryWrapper);
     }
 

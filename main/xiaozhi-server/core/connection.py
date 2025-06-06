@@ -41,7 +41,6 @@ from core.providers.tts.dto.dto import ContentType, TTSMessageDTO, SentenceType
 from config.logger import setup_logging, build_module_string, update_module_string
 from config.manage_api_client import DeviceNotFoundException, DeviceBindException
 
-
 TAG = __name__
 
 auto_import_modules("plugins_func.functions")
@@ -53,14 +52,14 @@ class TTSException(RuntimeError):
 
 class ConnectionHandler:
     def __init__(
-        self,
-        config: Dict[str, Any],
-        _vad,
-        _asr,
-        _llm,
-        _memory,
-        _intent,
-        server=None,
+            self,
+            config: Dict[str, Any],
+            _vad,
+            _asr,
+            _llm,
+            _memory,
+            _intent,
+            server=None,
     ):
         self.common_config = config
         self.config = copy.deepcopy(config)
@@ -144,7 +143,7 @@ class ConnectionHandler:
 
         self.timeout_task = None
         self.timeout_seconds = (
-            int(self.config.get("close_connection_no_voice_time", 120)) + 60
+                int(self.config.get("close_connection_no_voice_time", 120)) + 60
         )  # 在原来第一道关闭的基础上加60秒，进行二道关闭
 
         self.audio_format = "opus"
@@ -326,22 +325,18 @@ class ConnectionHandler:
             if self.vad is None:
                 self.vad = self._vad
             if self.asr is None:
-                self.asr = self._initialize_asr()
+                self.asr = await self.loop.run_in_executor(self.executor, self._initialize_asr)
             # 打开语音识别通道
-            asyncio.run_coroutine_threadsafe(
-                self.asr.open_audio_channels(self), self.loop
-            )
+            await self.asr.open_audio_channels(self)
             if self.tts is None:
-                self.tts = self._initialize_tts()
+                self.tts = await self.loop.run_in_executor(self.executor, self._initialize_tts)
             # 打开语音合成通道
-            asyncio.run_coroutine_threadsafe(
-                self.tts.open_audio_channels(self), self.loop
-            )
+            await self.tts.open_audio_channels(self)
 
             """加载记忆"""
-            self._initialize_memory()
+            await self.loop.run_in_executor(self.executor, self._initialize_memory)
             """加载意图识别"""
-            self._initialize_intent()
+            await self.loop.run_in_executor(self.executor, self._initialize_intent)
             """初始化上报线程"""
             await self._init_report_threads()
         except Exception as e:
@@ -363,11 +358,13 @@ class ConnectionHandler:
                     self.logger.bind(tag=TAG).error(f"线程中运行asyncio任务时发生异常: {e}")
                 finally:
                     loop.close()
+
             self.report_thread = threading.Thread(
                 target=run_async_in_thread, daemon=True
             )
             self.report_thread.start()
             self.logger.bind(tag=TAG).info("TTS上报线程已启动")
+
     def _initialize_tts(self):
         """初始化TTS"""
         tts = None
@@ -392,9 +389,11 @@ class ConnectionHandler:
 
         return asr
 
-    async def _get_student_info(self,device_id:str):
+    async def _get_student_info(self, device_id: str):
         student_info = await get_student_info(device_id)
-        
+        self.student_is_named = student_info.get('nickName', None)
+        self.student_gender = student_info.get('gender', None)
+        self.birthDate = student_info.get('birthDate', None)
 
     async def _initialize_private_config(self):
         """如果是从配置文件获取，则进行二次实例化"""
@@ -729,7 +728,7 @@ class ConnectionHandler:
                 if self.mcp_manager.is_mcp_tool(function_name):
                     result = self._handle_mcp_tool_call(function_call_data)
                 elif hasattr(self, "mcp_client") and self.mcp_client.has_tool(
-                    function_name
+                        function_name
                 ):
                     # 如果是小智端MCP工具调用
                     self.logger.bind(tag=TAG).debug(
@@ -889,7 +888,7 @@ class ConnectionHandler:
         """处理上报任务"""
         try:
             # 执行上报（传入二进制数据）
-            await report(self, type, text, audio_data, report_time,self.executor)
+            await report(self, type, text, audio_data, report_time, self.executor)
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"上报处理异常: {e}")
         finally:
