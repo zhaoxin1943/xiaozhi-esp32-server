@@ -37,6 +37,14 @@ public interface AgentChatHistoryService extends IService<AgentChatHistoryEntity
     List<AgentChatHistoryDTO> getChatHistoryBySessionId(String agentId, String sessionId);
 
     /**
+     * 根据设备mac地址获取会话列表
+     *
+     * @param deviceId
+     * @return 聊天记录列表
+     */
+    List<AgentChatHistoryDTO> getChatHistoryByDeviceId(String deviceId);
+
+    /**
      * 根据智能体ID删除聊天记录
      *
      * @param agentId     智能体ID

@@ -276,6 +276,16 @@ public class AgentController {
         return new Result<List<AgentChatHistoryDTO>>().ok(result);
     }
 
+    @GetMapping("/chat-history-by-device/{deviceId}")
+    @Operation(summary = "获取设备维度的聊天记录")
+    public Result<List<AgentChatHistoryDTO>> getAgentChatHistoryByDevice(
+            @PathVariable("deviceId") String deviceId) {
+
+        // 查询聊天记录
+        List<AgentChatHistoryDTO> result = agentChatHistoryService.getChatHistoryByDeviceId(deviceId);
+        return new Result<List<AgentChatHistoryDTO>>().ok(result);
+    }
+
     @PostMapping("/audio/{audioId}")
     @Operation(summary = "获取音频下载ID")
     @RequiresPermissions("sys:role:normal")

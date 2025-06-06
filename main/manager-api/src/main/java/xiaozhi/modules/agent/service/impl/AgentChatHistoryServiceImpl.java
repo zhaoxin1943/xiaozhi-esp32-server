@@ -77,6 +77,17 @@ public class AgentChatHistoryServiceImpl extends ServiceImpl<AiAgentChatHistoryD
     }
 
     @Override
+    public List<AgentChatHistoryDTO> getChatHistoryByDeviceId(String deviceId) {
+        QueryWrapper<AgentChatHistoryEntity> wrapper = new QueryWrapper<>();
+        wrapper.eq("mac_address", deviceId);
+        // 查询聊天记录
+        List<AgentChatHistoryEntity> historyList = list(wrapper);
+
+        // 转换为DTO
+        return ConvertUtils.sourceToTarget(historyList, AgentChatHistoryDTO.class);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteByAgentId(String agentId, Boolean deleteAudio, Boolean deleteText) {
         if (deleteAudio) {

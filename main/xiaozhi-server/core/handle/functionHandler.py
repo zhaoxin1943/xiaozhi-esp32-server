@@ -61,6 +61,7 @@ class FunctionHandler:
         self.function_registry.register_function("plugin_loader")
         self.function_registry.register_function("get_time")
         self.function_registry.register_function("get_lunar")
+        self.function_registry.register_function("update_student_info")
         # self.function_registry.register_function("handle_speaker_volume_or_screen_brightness")
 
     def register_config_functions(self):

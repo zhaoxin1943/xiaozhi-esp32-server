@@ -1,1 +1,1 @@
-INSERT INTO `sys_params` (id, param_code, param_value, value_type, param_type, remark) VALUES (701, 'student_info.name', 'Hello! Can you tell me your name?', 'string', 0, '收集学生姓名');
+INSERT INTO `sys_params` (id, param_code, param_value, value_type, param_type, remark) VALUES (701, 'student_info.name', 'Hello! Can you tell me your name?', 'string', 1, '收集学生姓名');

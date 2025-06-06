@@ -31,7 +31,7 @@ from core.utils.dialogue import Message, Dialogue
 from core.providers.asr.dto.dto import InterfaceType
 from core.handle.textHandle import handleTextMessage
 from core.handle.functionHandler import FunctionHandler
-from custom.request import get_student_info
+from custom.request import get_student_info, get_device_chat_history
 from plugins_func.loadplugins import auto_import_modules
 from plugins_func.register import Action, ActionResponse
 from core.auth import AuthMiddleware, AuthenticationError
@@ -44,6 +44,9 @@ from config.manage_api_client import DeviceNotFoundException, DeviceBindExceptio
 TAG = __name__
 
 auto_import_modules("plugins_func.functions")
+
+with open("enter_student_info_prompt.txt", "r", encoding="utf-8") as file:
+    enter_student_info_prompt = file.read()
 
 
 class TTSException(RuntimeError):
@@ -150,6 +153,8 @@ class ConnectionHandler:
         # {"mcp":true} 表示启用MCP功能
         self.features = None
 
+        self.need_enter_student_info = False
+
     async def handle_connection(self, ws):
         try:
             # 获取并验证headers
@@ -199,7 +204,6 @@ class ConnectionHandler:
             # 判断是否已经完成必要的信息录入
             await self._get_student_info(self.device_id)
             # 异步初始化
-            # self.executor.submit(self._initialize_components)
             await self._initialize_components()
             try:
                 async for message in self.websocket:
@@ -314,12 +318,22 @@ class ConnectionHandler:
             )
             await update_module_string(self.selected_module_str)
             """初始化组件"""
-            if self.config.get("prompt") is not None:
-                self.prompt = self.config["prompt"]
+            if self.need_enter_student_info:
+                self.prompt = enter_student_info_prompt
                 self.change_system_prompt(self.prompt)
                 self.logger.bind(tag=TAG).info(
-                    f"初始化组件: prompt成功 {self.prompt[:50]}..."
+                    f"初始化组件: 获取学生信息的prompt成功 {self.prompt[:50]}..."
                 )
+                for history_message in self.device_chat_history:
+                    self.dialogue.put(Message(role="assistant" if history_message.get('chatType') == 2 else "user",
+                                              content=history_message.get('content')))
+            else:
+                if self.config.get("prompt") is not None:
+                    self.prompt = self.config["prompt"]
+                    self.change_system_prompt(self.prompt)
+                    self.logger.bind(tag=TAG).info(
+                        f"初始化组件: prompt成功 {self.prompt[:50]}..."
+                    )
 
             """初始化本地组件"""
             if self.vad is None:
@@ -391,9 +405,14 @@ class ConnectionHandler:
 
     async def _get_student_info(self, device_id: str):
         student_info = await get_student_info(device_id)
+        if student_info is None:
+            return
         self.student_is_named = student_info.get('nickName', None)
-        self.student_gender = student_info.get('gender', None)
-        self.birthDate = student_info.get('birthDate', None)
+        self.student_gender_entered = student_info.get('gender', None)
+        self.student_birth_date_entered = student_info.get('birthDate', None)
+        if not self.student_is_named or not self.student_gender_entered or not self.student_birth_date_entered:
+            self.need_enter_student_info = True
+            self.device_chat_history = await get_device_chat_history(device_id)
 
     async def _initialize_private_config(self):
         """如果是从配置文件获取，则进行二次实例化"""
