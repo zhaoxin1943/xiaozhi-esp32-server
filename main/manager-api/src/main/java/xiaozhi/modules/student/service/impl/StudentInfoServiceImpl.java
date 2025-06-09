@@ -43,9 +43,12 @@ public class StudentInfoServiceImpl extends BaseServiceImpl<StudentDao, StudentI
     public void deleteStudentByDeviceId(String deviceId) {
         QueryWrapper<StudentInfoEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("device_id", deviceId);
+        queryWrapper.eq("deleted", 0);
         StudentInfoEntity studentInfoEntity = studentDao.selectOne(queryWrapper);
-        studentInfoEntity.setDeleted(true);
-        studentDao.updateById(studentInfoEntity);
+        if (studentInfoEntity != null) {
+            studentInfoEntity.setDeleted(true);
+            studentDao.updateById(studentInfoEntity);
+        }
     }
 
     @Override
