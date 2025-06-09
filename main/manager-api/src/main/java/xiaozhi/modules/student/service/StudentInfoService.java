@@ -27,5 +27,5 @@ public interface StudentInfoService extends BaseService<StudentInfoEntity> {
      * 更新学生信息
      * @param deviceId
      */
-    void updateStudentInfoByDeviceId(String deviceId);
+    void updateStudentInfoByDeviceId(String deviceId,String filedName,String filedValue);
 }
