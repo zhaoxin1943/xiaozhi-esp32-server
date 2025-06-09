@@ -882,9 +882,9 @@ class ConnectionHandler:
                         content=text,
                     )
                 )
+                self.chat(text, tool_call=True)
                 if function_name == UPDATE_STUDENT_INFO:
                     self.__handle_student_info_entered(text)
-                self.chat(text, tool_call=True)
         elif result.action == Action.NOTFOUND or result.action == Action.ERROR:
             text = result.result
             self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
