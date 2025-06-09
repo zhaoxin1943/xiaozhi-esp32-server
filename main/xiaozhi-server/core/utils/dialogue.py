@@ -86,3 +86,6 @@ class Dialogue:
                 self.getMessages(m, dialogue)
 
         return dialogue
+
+    def clear_history(self):
+        self.dialogue.clear()

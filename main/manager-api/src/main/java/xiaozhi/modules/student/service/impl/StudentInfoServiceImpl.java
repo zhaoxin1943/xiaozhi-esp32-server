@@ -37,4 +37,9 @@ public class StudentInfoServiceImpl extends BaseServiceImpl<StudentDao, StudentI
         studentInfoEntity.setDeleted(true);
         studentDao.updateById(studentInfoEntity);
     }
+
+    @Override
+    public void updateStudentInfoByDeviceId(String deviceId) {
+
+    }
 }

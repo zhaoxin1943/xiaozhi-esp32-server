@@ -48,6 +48,8 @@ auto_import_modules("plugins_func.functions")
 with open("enter_student_info_prompt.txt", "r", encoding="utf-8") as file:
     enter_student_info_prompt = file.read()
 
+UPDATE_STUDENT_INFO = 'update_student_info'
+
 
 class TTSException(RuntimeError):
     pass
@@ -734,7 +736,12 @@ class ConnectionHandler:
                     )
             if not bHasError:
                 response_message.clear()
-                self.logger.bind(tag=TAG).debug(
+                if function_name == UPDATE_STUDENT_INFO:
+                    function_arguments_data = json.loads(function_arguments)
+                    function_arguments_data[
+                        'field_value'] = f"{function_arguments_data['field_value']}__{self.device_id}__"
+                    function_arguments = json.dumps(function_arguments_data, ensure_ascii=False)
+                self.logger.bind(tag=TAG).info(
                     f"function_name={function_name}, function_id={function_id}, function_arguments={function_arguments}"
                 )
                 function_call_data = {
@@ -875,6 +882,8 @@ class ConnectionHandler:
                         content=text,
                     )
                 )
+                if function_name == UPDATE_STUDENT_INFO:
+                    self.__handle_student_info_entered(text)
                 self.chat(text, tool_call=True)
         elif result.action == Action.NOTFOUND or result.action == Action.ERROR:
             text = result.result
@@ -1006,3 +1015,27 @@ class ConnectionHandler:
                     break
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"超时检查任务出错: {e}")
+
+    def __handle_student_info_entered(self, text: str):
+        """
+        动态检查用户信息录入情况
+        """
+        if text == '已更新nick_name':
+            self.student_is_named = True
+        if text == '已更新gender':
+            self.student_gender_entered = True
+        if text == '已更新birth_date':
+            self.student_birth_date_entered = True
+
+        if not self.student_is_named or not self.student_gender_entered or not self.student_birth_date_entered:
+            self.need_enter_student_info = True
+        else:
+            self.need_enter_student_info = False
+        # 全部信息已录入，切基础模型。并清空之前的聊天记录
+        if not self.need_enter_student_info:
+            self.dialogue.clear_history()
+            self.prompt = self.config["prompt"]
+            self.change_system_prompt(self.prompt)
+            self.logger.bind(tag=TAG).info(
+                f"切换prompt成功 {self.prompt[:50]}..."
+            )
