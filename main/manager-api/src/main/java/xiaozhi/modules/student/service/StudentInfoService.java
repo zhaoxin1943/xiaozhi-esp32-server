@@ -21,7 +21,7 @@ public interface StudentInfoService extends BaseService<StudentInfoEntity> {
      * 解绑时，同时删除对应的学生信息
      * @param deviceId
      */
-    void deleteStudentByDeviceId(String deviceId);
+    void deleteStudentByDeviceId(String deviceId,String tag);
 
     /**
      * 更新学生信息

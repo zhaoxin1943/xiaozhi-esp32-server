@@ -131,7 +131,9 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
         redisUtils.delete(cacheDeviceKey);
         redisUtils.delete(deviceKey);
         // 自动创建跟当前设备绑定的学生数据
-        studentInfoService.insertStudent(deviceId);
+        if (studentInfoService.getStudentByDeviceId(deviceId) == null) {
+            studentInfoService.insertStudent(deviceId);
+        }
         return true;
     }
 
@@ -226,7 +228,6 @@ public class DeviceServiceImpl extends BaseServiceImpl<DeviceDao, DeviceEntity> 
 
         baseDao.deleteById(deviceId);
 
-        studentInfoService.deleteStudentByDeviceId(deviceId);
     }
 
     @Override

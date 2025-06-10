@@ -6,6 +6,7 @@ import java.util.Map;
 import xiaozhi.common.page.PageData;
 import xiaozhi.common.service.BaseService;
 import xiaozhi.modules.agent.dto.AgentDTO;
+import xiaozhi.modules.agent.dto.AgentLLMConfigDTO;
 import xiaozhi.modules.agent.entity.AgentEntity;
 
 /**
@@ -31,6 +32,22 @@ public interface AgentService extends BaseService<AgentEntity> {
      * @return 智能体实体
      */
     AgentEntity getAgentById(String id);
+
+    /**
+     * 根据type获取智能体
+     *
+     * @param agentType 智能体type
+     * @return 智能体实体
+     */
+    AgentEntity getAgentByType(String agentType);
+
+    /**
+     * 根据type获取智能体llm配置
+     *
+     * @param agentType 智能体type
+     * @return 智能体实体
+     */
+    AgentLLMConfigDTO getAgentLLMConfig(String agentType);
 
     /**
      * 插入智能体

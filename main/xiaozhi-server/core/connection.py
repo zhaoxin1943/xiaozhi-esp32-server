@@ -11,6 +11,7 @@ import traceback
 import subprocess
 import websockets
 from core.handle.mcpHandle import call_mcp_tool
+from core.utils import llm as llm_utils
 from core.utils.util import (
     extract_json_from_string,
     check_vad_update,
@@ -32,6 +33,7 @@ from core.providers.asr.dto.dto import InterfaceType
 from core.handle.textHandle import handleTextMessage
 from core.handle.functionHandler import FunctionHandler
 from custom.request import get_student_info, get_device_chat_history
+from custom.update_student_info import create_enter_student_info_llm
 from plugins_func.loadplugins import auto_import_modules
 from plugins_func.register import Action, ActionResponse
 from core.auth import AuthMiddleware, AuthenticationError
@@ -44,9 +46,6 @@ from config.manage_api_client import DeviceNotFoundException, DeviceBindExceptio
 TAG = __name__
 
 auto_import_modules("plugins_func.functions")
-
-with open("enter_student_info_prompt.txt", "r", encoding="utf-8") as file:
-    enter_student_info_prompt = file.read()
 
 UPDATE_STUDENT_INFO = 'update_student_info'
 
@@ -156,6 +155,7 @@ class ConnectionHandler:
         self.features = None
 
         self.need_enter_student_info = False
+        self.enter_student_info_llm = None
 
     async def handle_connection(self, ws):
         try:
@@ -226,7 +226,7 @@ class ConnectionHandler:
     async def _save_and_close(self, ws):
         """保存记忆并关闭连接"""
         try:
-            if self.memory:
+            if self.memory and not self.need_enter_student_info:
                 # 使用线程池异步保存记忆
                 def save_memory_task():
                     try:
@@ -321,7 +321,7 @@ class ConnectionHandler:
             await update_module_string(self.selected_module_str)
             """初始化组件"""
             if self.need_enter_student_info:
-                self.prompt = enter_student_info_prompt
+                self.prompt = self.enter_student_info_llm_prompt
                 self.change_system_prompt(self.prompt)
                 self.logger.bind(tag=TAG).info(
                     f"初始化组件: 获取学生信息的prompt成功 {self.prompt[:50]}..."
@@ -415,6 +415,11 @@ class ConnectionHandler:
         if not self.student_is_named or not self.student_gender_entered or not self.student_birth_date_entered:
             self.need_enter_student_info = True
             self.device_chat_history = await get_device_chat_history(device_id)
+            enter_student_info_llm = await create_enter_student_info_llm()
+            self.enter_student_info_llm = llm_utils.create_instance(
+                enter_student_info_llm['llmConfig']['type'], enter_student_info_llm['llmConfig']
+            )
+            self.enter_student_info_llm_prompt = enter_student_info_llm['llmPrompt']
 
     async def _initialize_private_config(self):
         """如果是从配置文件获取，则进行二次实例化"""
@@ -463,9 +468,7 @@ class ConnectionHandler:
         if private_config.get("LLM", None) is not None:
             init_llm = True
             self.config["LLM"] = private_config["LLM"]
-            self.config["selected_module"]["LLM"] = private_config["selected_module"][
-                "LLM"
-            ]
+            self.config["selected_module"]["LLM"] = private_config["selected_module"]["LLM"]
         if private_config.get("Memory", None) is not None:
             init_memory = True
             self.config["Memory"] = private_config["Memory"]
@@ -539,8 +542,6 @@ class ConnectionHandler:
             ]
             if memory_llm_name and memory_llm_name in self.config["LLM"]:
                 # 如果配置了专用LLM，则创建独立的LLM实例
-                from core.utils import llm as llm_utils
-
                 memory_llm_config = self.config["LLM"][memory_llm_name]
                 memory_llm_type = memory_llm_config.get("type", memory_llm_name)
                 memory_llm = llm_utils.create_instance(
@@ -581,8 +582,6 @@ class ConnectionHandler:
 
             if intent_llm_name and intent_llm_name in self.config["LLM"]:
                 # 如果配置了专用LLM，则创建独立的LLM实例
-                from core.utils import llm as llm_utils
-
                 intent_llm_config = self.config["LLM"][intent_llm_name]
                 intent_llm_type = intent_llm_config.get("type", intent_llm_name)
                 intent_llm = llm_utils.create_instance(
@@ -611,6 +610,12 @@ class ConnectionHandler:
         # 更新系统prompt至上下文
         self.dialogue.update_system_message(self.prompt)
 
+    def __get_llm(self):
+        if self.need_enter_student_info:
+            return self.enter_student_info_llm
+        else:
+            return self.llm
+
     def chat(self, query, tool_call=False):
         self.logger.bind(tag=TAG).info(f"大模型收到用户消息: {query}")
         self.llm_finish_task = False
@@ -633,7 +638,7 @@ class ConnectionHandler:
         try:
             # 使用带记忆的对话
             memory_str = None
-            if self.memory is not None:
+            if self.memory is not None and not self.need_enter_student_info:
                 future = asyncio.run_coroutine_threadsafe(
                     self.memory.query_memory(query), self.loop
                 )
@@ -644,13 +649,13 @@ class ConnectionHandler:
 
             if functions is not None:
                 # 使用支持functions的streaming接口
-                llm_responses = self.llm.response_with_functions(
+                llm_responses = self.__get_llm().response_with_functions(
                     self.session_id,
                     self.dialogue.get_llm_dialogue_with_memory(memory_str),
                     functions=functions,
                 )
             else:
-                llm_responses = self.llm.response(
+                llm_responses = self.__get_llm().response(
                     self.session_id,
                     self.dialogue.get_llm_dialogue_with_memory(memory_str),
                 )

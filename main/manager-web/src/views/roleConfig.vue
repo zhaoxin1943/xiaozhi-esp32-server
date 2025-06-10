@@ -33,20 +33,26 @@
               <div class="form-content">
                 <div class="form-grid">
                   <div class="form-column">
-                    <el-form-item label="助手昵称：">
-                      <el-input v-model="form.agentName" class="form-input" maxlength="10" />
-                    </el-form-item>
-                    <el-form-item label="角色模版：">
-                      <div class="template-container">
-                        <div v-for="(template, index) in templates" :key="`template-${index}`" class="template-item"
-                          :class="{ 'template-loading': loadingTemplate }" @click="selectTemplate(template)">
-                          {{ template.agentName }}
-                        </div>
-                      </div>
-                    </el-form-item>
+                    <div class="model-row">
+                      <el-form-item label="助手昵称：">
+                        <el-input v-model="form.agentName" class="form-input" maxlength="10" />
+                      </el-form-item>
+                      <el-form-item label="助手类型：">
+                        <el-input v-model="form.agentType" class="form-input" maxlength="20" placeholder="CollectingInfo/Common"/>
+                      </el-form-item>
+                    </div>
+
+<!--                    <el-form-item label="角色模版：">-->
+<!--                      <div class="template-container">-->
+<!--                        <div v-for="(template, index) in templates" :key="`template-${index}`" class="template-item"-->
+<!--                          :class="{ 'template-loading': loadingTemplate }" @click="selectTemplate(template)">-->
+<!--                          {{ template.agentName }}-->
+<!--                        </div>-->
+<!--                      </div>-->
+<!--                    </el-form-item>-->
                     <el-form-item label="角色介绍：">
                       <el-input type="textarea" rows="9" resize="none" placeholder="请输入内容" v-model="form.systemPrompt"
-                        maxlength="2000" show-word-limit class="form-textarea" />
+                        maxlength="20000" show-word-limit class="form-textarea" />
                     </el-form-item>
 
                     <el-form-item label="记忆：">
@@ -156,6 +162,7 @@ export default {
       form: {
         agentCode: "",
         agentName: "",
+        agentType:"",
         ttsVoiceId: "",
         chatHistoryConf: 0,
         systemPrompt: "",
@@ -208,6 +215,7 @@ export default {
       const configData = {
         agentCode: this.form.agentCode,
         agentName: this.form.agentName,
+        agentType: this.form.agentType,
         asrModelId: this.form.model.asrModelId,
         vadModelId: this.form.model.vadModelId,
         llmModelId: this.form.model.llmModelId,

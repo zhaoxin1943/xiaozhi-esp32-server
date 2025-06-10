@@ -16,6 +16,7 @@ import xiaozhi.modules.student.service.StudentInfoService;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -40,13 +41,14 @@ public class StudentInfoServiceImpl extends BaseServiceImpl<StudentDao, StudentI
     }
 
     @Override
-    public void deleteStudentByDeviceId(String deviceId) {
+    public void deleteStudentByDeviceId(String deviceId, String tag) {
         QueryWrapper<StudentInfoEntity> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("device_id", deviceId);
         queryWrapper.eq("deleted", 0);
         StudentInfoEntity studentInfoEntity = studentDao.selectOne(queryWrapper);
         if (studentInfoEntity != null) {
             studentInfoEntity.setDeleted(true);
+            studentInfoEntity.setDeviceId(studentInfoEntity.getDeviceId() + tag);
             studentDao.updateById(studentInfoEntity);
         }
     }

@@ -96,9 +96,9 @@ public class ConfigServiceImpl implements ConfigService {
         }
 
         // 获取智能体信息
-        AgentEntity agent = agentService.getAgentById(device.getAgentId());
+        AgentEntity agent = agentService.getAgentByType(AgentEntity.AgentTypeConstant.COMMON);
         if (agent == null) {
-            throw new RenException("智能体未找到");
+            throw new RenException("默认智能体未找到");
         }
         // 获取音色信息
         String voice = null;

@@ -20,9 +20,11 @@ import xiaozhi.common.redis.RedisUtils;
 import xiaozhi.common.service.impl.BaseServiceImpl;
 import xiaozhi.modules.agent.dao.AgentDao;
 import xiaozhi.modules.agent.dto.AgentDTO;
+import xiaozhi.modules.agent.dto.AgentLLMConfigDTO;
 import xiaozhi.modules.agent.entity.AgentEntity;
 import xiaozhi.modules.agent.service.AgentService;
 import xiaozhi.modules.device.service.DeviceService;
+import xiaozhi.modules.model.entity.ModelConfigEntity;
 import xiaozhi.modules.model.service.ModelConfigService;
 import xiaozhi.modules.security.user.SecurityUser;
 import xiaozhi.modules.sys.enums.SuperAdminEnum;
@@ -56,6 +58,32 @@ public class AgentServiceImpl extends BaseServiceImpl<AgentDao, AgentEntity> imp
             agent.setChatHistoryConf(Constant.ChatHistoryConfEnum.RECORD_TEXT_AUDIO.getCode());
         }
         return agent;
+    }
+
+    @Override
+    public AgentEntity getAgentByType(String agentType) {
+        QueryWrapper<AgentEntity> wrapper = new QueryWrapper<>();
+        wrapper.eq("agent_type", agentType);
+        AgentEntity agent = agentDao.selectOne(wrapper);
+        if (agent != null && agent.getMemModelId() != null && agent.getMemModelId().equals(Constant.MEMORY_NO_MEM)) {
+            agent.setChatHistoryConf(Constant.ChatHistoryConfEnum.IGNORE.getCode());
+        } else if (agent != null && agent.getMemModelId() != null
+                && !agent.getMemModelId().equals(Constant.MEMORY_NO_MEM)
+                && agent.getChatHistoryConf() == null) {
+            agent.setChatHistoryConf(Constant.ChatHistoryConfEnum.RECORD_TEXT_AUDIO.getCode());
+        }
+        return agent;
+    }
+
+    @Override
+    public AgentLLMConfigDTO getAgentLLMConfig(String agentType) {
+        AgentEntity agent = getAgentByType(agentType);
+        String llmModelId = agent.getLlmModelId();
+        ModelConfigEntity modelConfigEntity = modelConfigService.getModelById(llmModelId, true);
+        AgentLLMConfigDTO agentLLMConfigDTO = new AgentLLMConfigDTO();
+        agentLLMConfigDTO.setLlmConfig(modelConfigEntity.getConfigJson());
+        agentLLMConfigDTO.setLlmPrompt(agent.getSystemPrompt());
+        return agentLLMConfigDTO;
     }
 
     @Override

@@ -14,6 +14,12 @@ import lombok.Data;
 @Schema(description = "智能体信息")
 public class AgentEntity {
 
+    public class AgentTypeConstant {
+        public static final String COLLECTING_INFO = "CollectingInfo";
+        public static final String COMMON = "Common";
+        public static final String CUSTOM = "Custom";
+    }
+
     @TableId(type = IdType.ASSIGN_UUID)
     @Schema(description = "智能体唯一标识")
     private String id;
@@ -26,6 +32,15 @@ public class AgentEntity {
 
     @Schema(description = "智能体名称")
     private String agentName;
+
+    /**
+     * 智能体的类型
+     * CollectingInfo : 用于收集学生信息
+     * Common: 用于常规的英语对话
+     * Custom : 自定义类型(暂时用不上)
+     */
+    @Schema(description = "智能体类型")
+    private String agentType;
 
     @Schema(description = "语音识别模型标识")
     private String asrModelId;

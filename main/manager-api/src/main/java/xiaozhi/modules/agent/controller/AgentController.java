@@ -35,12 +35,7 @@ import xiaozhi.common.redis.RedisUtils;
 import xiaozhi.common.user.UserDetail;
 import xiaozhi.common.utils.ConvertUtils;
 import xiaozhi.common.utils.Result;
-import xiaozhi.modules.agent.dto.AgentChatHistoryDTO;
-import xiaozhi.modules.agent.dto.AgentChatSessionDTO;
-import xiaozhi.modules.agent.dto.AgentCreateDTO;
-import xiaozhi.modules.agent.dto.AgentDTO;
-import xiaozhi.modules.agent.dto.AgentMemoryDTO;
-import xiaozhi.modules.agent.dto.AgentUpdateDTO;
+import xiaozhi.modules.agent.dto.*;
 import xiaozhi.modules.agent.entity.AgentEntity;
 import xiaozhi.modules.agent.entity.AgentTemplateEntity;
 import xiaozhi.modules.agent.service.AgentChatAudioService;
@@ -91,6 +86,13 @@ public class AgentController {
     public Result<AgentEntity> getAgentById(@PathVariable("id") String id) {
         AgentEntity agent = agentService.getAgentById(id);
         return new Result<AgentEntity>().ok(agent);
+    }
+
+    @GetMapping("/llm/{type}")
+    @Operation(summary = "获取指定type的llm配置")
+    public Result<AgentLLMConfigDTO> getAgentLLMByType(@PathVariable("type") String type) {
+        AgentLLMConfigDTO agentLLMConfigDTO = agentService.getAgentLLMConfig(type);
+        return new Result<AgentLLMConfigDTO>().ok(agentLLMConfigDTO);
     }
 
     @PostMapping
@@ -159,6 +161,11 @@ public class AgentController {
         if (dto.getAgentName() != null) {
             existingEntity.setAgentName(dto.getAgentName());
         }
+
+        if (dto.getAgentType() != null) {
+            existingEntity.setAgentType(dto.getAgentType());
+        }
+
         if (dto.getAgentCode() != null) {
             existingEntity.setAgentCode(dto.getAgentCode());
         }

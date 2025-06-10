@@ -1,0 +1,1 @@
+ALTER TABLE `ai_agent` ADD COLUMN `agent_type` VARCHAR(50) DEFAULT NULL COMMENT '智能体类型',ADD CONSTRAINT uk_agentType UNIQUE (agent_type);

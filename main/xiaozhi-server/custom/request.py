@@ -28,3 +28,7 @@ async def update_student_info_by_deviceId(device_id: str, field_name: str, field
     return await ManageApiClient._instance._execute_request("POST",
                                                             endpoint,
                                                             data=payload)
+
+
+async def get_enter_student_info_llm():
+    return await ManageApiClient._instance._execute_request("GET", f"/agent/llm/CollectingInfo")
