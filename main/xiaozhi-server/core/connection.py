@@ -415,11 +415,11 @@ class ConnectionHandler:
         if not self.student_is_named or not self.student_gender_entered or not self.student_birth_date_entered:
             self.need_enter_student_info = True
             self.device_chat_history = await get_device_chat_history(device_id)
-            enter_student_info_llm = await create_enter_student_info_llm()
+            enter_student_info_llm_config = await create_enter_student_info_llm()
             self.enter_student_info_llm = llm_utils.create_instance(
-                enter_student_info_llm['llmConfig']['type'], enter_student_info_llm['llmConfig']
+                enter_student_info_llm_config['llmConfig']['type'], enter_student_info_llm_config['llmConfig']
             )
-            self.enter_student_info_llm_prompt = enter_student_info_llm['llmPrompt']
+            self.enter_student_info_llm_prompt = enter_student_info_llm_config['llmPrompt']
 
     async def _initialize_private_config(self):
         """如果是从配置文件获取，则进行二次实例化"""
@@ -1036,6 +1036,7 @@ class ConnectionHandler:
             self.need_enter_student_info = True
         else:
             self.need_enter_student_info = False
+            self.enter_student_info_llm = None
         # 全部信息已录入，切基础模型。并清空之前的聊天记录
         if not self.need_enter_student_info:
             self.dialogue.clear_history()
