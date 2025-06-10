@@ -12,6 +12,7 @@ import subprocess
 import websockets
 from core.handle.mcpHandle import call_mcp_tool
 from core.utils import llm as llm_utils
+from core.utils.custom import replace_registered_date
 from core.utils.util import (
     extract_json_from_string,
     check_vad_update,
@@ -419,7 +420,7 @@ class ConnectionHandler:
             self.enter_student_info_llm = llm_utils.create_instance(
                 enter_student_info_llm_config['llmConfig']['type'], enter_student_info_llm_config['llmConfig']
             )
-            self.enter_student_info_llm_prompt = enter_student_info_llm_config['llmPrompt']
+            self.enter_student_info_llm_prompt = replace_registered_date(enter_student_info_llm_config['llmPrompt'])
 
     async def _initialize_private_config(self):
         """如果是从配置文件获取，则进行二次实例化"""
