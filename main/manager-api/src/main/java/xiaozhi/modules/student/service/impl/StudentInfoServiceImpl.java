@@ -16,7 +16,6 @@ import xiaozhi.modules.student.service.StudentInfoService;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.UUID;
 
 @Service
 @AllArgsConstructor

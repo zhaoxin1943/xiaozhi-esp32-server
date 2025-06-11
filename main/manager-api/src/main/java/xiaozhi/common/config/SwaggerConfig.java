@@ -95,4 +95,12 @@ public class SwaggerConfig {
                 .pathsToMatch("/student/**") // <<-- 匹配 /student 开头的路径
                 .build();
     }
+
+    @Bean
+    public GroupedOpenApi dailyLessonApi() {
+        return GroupedOpenApi.builder()
+                .group("dailyLesson") // 这个 group 名称会对应你 Controller 上的 @Tag(name = "学生管理")
+                .pathsToMatch("/daily-lesson/**") // <<-- 匹配 /student 开头的路径
+                .build();
+    }
 }
