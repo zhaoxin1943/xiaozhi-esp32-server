@@ -33,8 +33,9 @@ from core.utils.dialogue import Message, Dialogue
 from core.providers.asr.dto.dto import InterfaceType
 from core.handle.textHandle import handleTextMessage
 from core.handle.functionHandler import FunctionHandler
-from custom.request import get_student_info, get_device_chat_history
+from custom.request import get_student_info, get_device_chat_history, get_student_info_with_lessons
 from custom.update_student_info import create_enter_student_info_llm
+from custom.utils import calculate_age
 from plugins_func.loadplugins import auto_import_modules
 from plugins_func.register import Action, ActionResponse
 from core.auth import AuthMiddleware, AuthenticationError
@@ -157,6 +158,7 @@ class ConnectionHandler:
 
         self.need_enter_student_info = False
         self.enter_student_info_llm = None
+        self.student_info = None
 
     async def handle_connection(self, ws):
         try:
@@ -332,7 +334,7 @@ class ConnectionHandler:
                                               content=history_message.get('content')))
             else:
                 if self.config.get("prompt") is not None:
-                    self.prompt = self.config["prompt"]
+                    self.prompt = self.__format_prompt(self.config["prompt"])
                     self.change_system_prompt(self.prompt)
                     self.logger.bind(tag=TAG).info(
                         f"初始化组件: prompt成功 {self.prompt[:50]}..."
@@ -406,13 +408,34 @@ class ConnectionHandler:
 
         return asr
 
+    def __format_prompt(self, prompt: str):
+        daily_lesson = None
+        if self.uncompleted_lessons and len(self.uncompleted_lessons) > 0:
+            daily_lesson = self.uncompleted_lessons[0]
+        replacements = {
+            "{{nickname}}": self.student_info.get('nickName', '同学'),
+            "{{age}}": str(calculate_age(self.student_info.get('birthDate', None))),
+            "{{is_new_session}}": 'True',
+            "{{daily_program_available}}": f"{True if daily_lesson else False}",
+            "{{allow_chinese_response}}": 'False',
+            "{{daily_program_topic}}": daily_lesson['lessonName'] if daily_lesson else ""
+        }
+        filled_prompt = prompt
+        for placeholder, value in replacements.items():
+            filled_prompt = filled_prompt.replace(placeholder, value)
+
+        return filled_prompt
+
     async def _get_student_info(self, device_id: str):
-        student_info = await get_student_info(device_id)
-        if student_info is None:
+        student_info_with_lessons = await get_student_info_with_lessons(device_id)
+        if student_info_with_lessons is None:
             return
-        self.student_is_named = student_info.get('nickName', None)
-        self.student_gender_entered = student_info.get('gender', None)
-        self.student_birth_date_entered = student_info.get('birthDate', None)
+
+        self.student_info = student_info_with_lessons['studentInfo']
+        self.student_is_named = self.student_info.get('nickName', None) is not None
+        self.student_gender_entered = self.student_info.get('gender', None) is not None
+        self.student_birth_date_entered = self.student_info.get('birthDate', None) is not None
+        self.uncompleted_lessons = student_info_with_lessons['uncompletedLessons']
         if not self.student_is_named or not self.student_gender_entered or not self.student_birth_date_entered:
             self.need_enter_student_info = True
             self.device_chat_history = await get_device_chat_history(device_id)
@@ -1041,7 +1064,7 @@ class ConnectionHandler:
         # 全部信息已录入，切基础模型。并清空之前的聊天记录
         if not self.need_enter_student_info:
             self.dialogue.clear_history()
-            self.prompt = self.config["prompt"]
+            self.prompt = self.__format_prompt(self.config["prompt"])
             self.change_system_prompt(self.prompt)
             self.logger.bind(tag=TAG).info(
                 f"切换prompt成功 {self.prompt[:50]}..."

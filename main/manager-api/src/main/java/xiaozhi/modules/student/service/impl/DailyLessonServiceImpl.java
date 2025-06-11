@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import xiaozhi.common.exception.RenException;
 import xiaozhi.common.service.impl.BaseServiceImpl;
 import xiaozhi.modules.student.dao.DailyLessonDao;
@@ -11,7 +12,6 @@ import xiaozhi.modules.student.entity.DailyLessonEntity;
 import xiaozhi.modules.student.service.DailyLessonService;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Date;
 import java.time.LocalDate;
@@ -62,18 +62,16 @@ public class DailyLessonServiceImpl extends BaseServiceImpl<DailyLessonDao, Dail
 
         // 2. 查询当天已存在的最大 lessonIndex
         QueryWrapper<DailyLessonEntity> queryWrapper = new QueryWrapper<>();
-        queryWrapper.select("MAX(lesson_index) as max_index");
+        queryWrapper.select("MAX(lesson_index)");
         queryWrapper.ge("publish_date", startOfDay);
         queryWrapper.lt("publish_date", endOfDay);
 
-        List<Map<String, Object>> resultList = dailyLessonDao.selectMaps(queryWrapper);
+        List<Object> resultList = dailyLessonDao.selectObjs(queryWrapper);
 
         int currentIndex = 0;
-        if (resultList != null && !resultList.isEmpty() && resultList.get(0) != null) {
-            Map<String, Object> map = resultList.get(0);
-            if (map.get("max_index") != null) {
-                currentIndex = ((Number) map.get("max_index")).intValue();
-            }
+        if (!CollectionUtils.isEmpty(resultList) && resultList.getFirst() != null) {
+            Object maxIndexObj = resultList.getFirst();
+            currentIndex = ((Number) maxIndexObj).intValue();
         }
         // 3. 设置新的 lessonIndex
         dailyLesson.setLessonIndex(currentIndex + 1);

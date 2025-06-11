@@ -10,18 +10,23 @@ import java.text.ParseException;
 
 import xiaozhi.common.service.impl.BaseServiceImpl;
 import xiaozhi.modules.student.dao.StudentDao;
+import xiaozhi.modules.student.dao.StudentWithLessonsDto;
+import xiaozhi.modules.student.entity.DailyLessonEntity;
 import xiaozhi.modules.student.entity.StudentInfoEntity;
 import xiaozhi.modules.student.enums.StudentGender;
 import xiaozhi.modules.student.service.StudentInfoService;
+import xiaozhi.modules.student.service.StudyLogService;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
 public class StudentInfoServiceImpl extends BaseServiceImpl<StudentDao, StudentInfoEntity> implements StudentInfoService {
 
     private final StudentDao studentDao;
+    private final StudyLogService studyLogService;
     private static final Logger logger = LoggerFactory.getLogger(StudentInfoServiceImpl.class);
 
     @Override
@@ -112,5 +117,21 @@ public class StudentInfoServiceImpl extends BaseServiceImpl<StudentDao, StudentI
         studentInfoEntity.setLastActive(new Date());
         studentDao.updateById(studentInfoEntity); // 更新现有记录
         logger.info("Updated student record for deviceId={}", deviceId);
+    }
+
+    @Override
+    public StudentWithLessonsDto getStudentInfoWithLessons(String deviceId) {
+        StudentInfoEntity student = this.getStudentByDeviceId(deviceId);
+        if (student == null) {
+            return null;
+        }
+
+        Date today = new Date();
+        List<DailyLessonEntity> uncompletedLessons = studyLogService.getUncompletedLessons(student.getId(), today);
+        StudentWithLessonsDto resultDto = new StudentWithLessonsDto();
+        resultDto.setStudentInfo(student);
+        resultDto.setUncompletedLessons(uncompletedLessons);
+
+        return resultDto;
     }
 }

@@ -3,9 +3,9 @@ package xiaozhi.modules.student.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.web.bind.annotation.*;
 import xiaozhi.common.utils.Result;
+import xiaozhi.modules.student.dao.StudentWithLessonsDto;
 import xiaozhi.modules.student.entity.StudentInfoEntity;
 import xiaozhi.modules.student.service.StudentInfoService;
 
@@ -21,6 +21,13 @@ public class StudentController {
     public Result<StudentInfoEntity> getStudentInfoByDeviceId(@PathVariable String deviceId) {
         StudentInfoEntity student_info = studentInfoService.getStudentByDeviceId(deviceId);
         return new Result<StudentInfoEntity>().ok(student_info);
+    }
+
+    @GetMapping("/{deviceId}/with-lessons") // 建议使用更具体的路径
+    @Operation(summary = "获取学生信息及当天未学习课程")
+    public Result<StudentWithLessonsDto> getStudentInfoWithLessonByDeviceId(@PathVariable String deviceId) {
+        StudentWithLessonsDto studentData = studentInfoService.getStudentInfoWithLessons(deviceId);
+        return new Result<StudentWithLessonsDto>().ok(studentData);
     }
 
     @PostMapping("/updateStudentInfo")

@@ -1,6 +1,7 @@
 package xiaozhi.modules.student.service;
 
 import xiaozhi.common.service.BaseService;
+import xiaozhi.modules.student.dao.StudentWithLessonsDto;
 import xiaozhi.modules.student.entity.StudentInfoEntity;
 
 public interface StudentInfoService extends BaseService<StudentInfoEntity> {
@@ -28,4 +29,11 @@ public interface StudentInfoService extends BaseService<StudentInfoEntity> {
      * @param deviceId
      */
     void updateStudentInfoByDeviceId(String deviceId,String filedName,String filedValue);
+
+    /**
+     * 根据设备ID，获取学生信息以及当天未学习的课程
+     * @param deviceId 设备ID
+     * @return 包含学生信息和课程列表的DTO
+     */
+    StudentWithLessonsDto getStudentInfoWithLessons(String deviceId);
 }

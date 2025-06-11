@@ -5,12 +5,12 @@ from datetime import datetime
 
 class Message:
     def __init__(
-        self,
-        role: str,
-        content: str = None,
-        uniq_id: str = None,
-        tool_calls=None,
-        tool_call_id=None,
+            self,
+            role: str,
+            content: str = None,
+            uniq_id: str = None,
+            tool_calls=None,
+            tool_call_id=None,
     ):
         self.uniq_id = uniq_id if uniq_id is not None else str(uuid.uuid4())
         self.role = role
@@ -60,10 +60,10 @@ class Dialogue:
             self.put(Message(role="system", content=new_content))
 
     def get_llm_dialogue_with_memory(
-        self, memory_str: str = None
+            self, memory_str: str = None
     ) -> List[Dict[str, str]]:
         if memory_str is None or len(memory_str) == 0:
-            return self.get_llm_dialogue()
+            memory_str = '[无]'
 
         # 构建带记忆的对话
         dialogue = []
@@ -74,10 +74,7 @@ class Dialogue:
         )
 
         if system_message:
-            enhanced_system_prompt = (
-                f"{system_message.content}\n\n"
-                f"以下是用户的历史记忆：\n```\n{memory_str}\n```"
-            )
+            enhanced_system_prompt = system_message.content.replace("{{session_summary_from_memory}}", memory_str)
             dialogue.append({"role": "system", "content": enhanced_system_prompt})
 
         # 添加用户和助手的对话
