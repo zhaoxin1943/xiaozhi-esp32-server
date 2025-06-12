@@ -1071,5 +1071,5 @@ class ConnectionHandler:
 
     def change_daily_program_unavailable(self):
         filled_prompt = self.prompt
-        filled_prompt = filled_prompt.replace("{{daily_program_available}}", f"{False}")
+        filled_prompt = filled_prompt.replace('"daily_program_available": True', '"daily_program_available": False')
         self.change_system_prompt(filled_prompt)

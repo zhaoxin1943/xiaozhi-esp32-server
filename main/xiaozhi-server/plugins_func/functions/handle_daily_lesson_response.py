@@ -47,14 +47,8 @@ def handle_daily_lesson_response(conn, is_agree: bool):
 
         def handle_done(f):
             try:
-                audio_path = f.result()
+                f.result()
                 conn.logger.bind(tag=TAG).info("播放课程完成")
-                # if audio_path and os.path.exists(audio_path):
-                #     try:
-                #         os.remove(audio_path)
-                #         conn.logger.bind(tag=TAG).info(f"已删除音频文件: {audio_path}")
-                #     except Exception as e:
-                #         conn.logger.bind(tag=TAG).error(f"删除音频文件失败: {e}")
             except Exception as e:
                 conn.logger.bind(tag=TAG).error(f"播放课程失败: {e}")
 
@@ -63,6 +57,7 @@ def handle_daily_lesson_response(conn, is_agree: bool):
             action=Action.NONE, result="指令已接收", response=None
         )
     else:
+        conn.change_daily_program_unavailable()
         return ActionResponse(action=Action.REQLLM, result="指令已接收", response=None)
 
 
@@ -93,7 +88,7 @@ async def play_remote_music(conn, audio_url: str, lesson_name: str):
         audio_path = await download_lesson_audio(audio_url)
         start_text = f"Great! Let's listen to today's program {lesson_name}. "
         conn.dialogue.put(Message(role="assistant", content=start_text))
-        end_text = "And that's the program for today. So, what are you thinking about now?"
+        end_text = "      And that's the program for today. So, what are you thinking about now?"
         conn.dialogue.put(Message(role="assistant", content=end_text))
 
         conn.tts.tts_text_queue.put(
@@ -139,8 +134,5 @@ async def play_remote_music(conn, audio_url: str, lesson_name: str):
             )
         )
 
-        return audio_path
-
     except Exception as e:
         logger.bind(tag=TAG).error(f"play_remote_music error: {str(e)}")
-        return None
