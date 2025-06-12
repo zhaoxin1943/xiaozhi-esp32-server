@@ -4,8 +4,12 @@ from config.manage_api_client import ManageApiClient
 
 
 async def get_student_info(device_id) -> Optional[Dict]:
-    """获取服务器基础配置"""
+    """获取学生信息"""
     return await ManageApiClient._instance._execute_request("GET", f"/student/{device_id}")
+
+async def get_student_info_with_lessons(device_id) -> Optional[Dict]:
+    """获取学生信息以及今日未收听的节目"""
+    return await ManageApiClient._instance._execute_request("GET", f"/student/{device_id}/with-lessons")
 
 
 async def get_device_chat_history(device_id: str) -> Optional[Dict]:
