@@ -49,7 +49,7 @@ TAG = __name__
 
 auto_import_modules("plugins_func.functions")
 
-UPDATE_STUDENT_INFO = 'update_student_info'
+FUNCTION_UPDATE_STUDENT_INFO = 'update_student_info'
 
 
 class TTSException(RuntimeError):
@@ -415,7 +415,6 @@ class ConnectionHandler:
         replacements = {
             "{{nickname}}": self.student_info.get('nickName', '同学'),
             "{{age}}": str(calculate_age(self.student_info.get('birthDate', None))),
-            "{{is_new_session}}": 'True',
             "{{daily_program_available}}": f"{True if daily_lesson else False}",
             "{{allow_chinese_response}}": 'False',
             "{{daily_program_topic}}": daily_lesson['lessonName'] if daily_lesson else ""
@@ -765,7 +764,7 @@ class ConnectionHandler:
                     )
             if not bHasError:
                 response_message.clear()
-                if function_name == UPDATE_STUDENT_INFO:
+                if function_name == FUNCTION_UPDATE_STUDENT_INFO:
                     function_arguments_data = json.loads(function_arguments)
                     function_arguments_data[
                         'field_value'] = f"{function_arguments_data['field_value']}__{self.device_id}__"
@@ -912,7 +911,7 @@ class ConnectionHandler:
                     )
                 )
                 self.chat(text, tool_call=True)
-                if function_name == UPDATE_STUDENT_INFO:
+                if function_name == FUNCTION_UPDATE_STUDENT_INFO:
                     self.__handle_student_info_entered(text)
         elif result.action == Action.NOTFOUND or result.action == Action.ERROR:
             text = result.result

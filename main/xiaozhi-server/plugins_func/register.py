@@ -16,6 +16,7 @@ class ToolType(Enum):
     )
     IOT_CTL = (5, "IOT设备控制，需要传递conn参数")
     MCP_CLIENT = (6, "MCP客户端")
+    WAIT_WITH_CONN = (7, "调用工具，等待函数返回,会给function call传入conn参数")
 
     def __init__(self, code, message):
         self.code = code
