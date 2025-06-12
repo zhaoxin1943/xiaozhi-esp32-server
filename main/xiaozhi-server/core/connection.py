@@ -324,8 +324,8 @@ class ConnectionHandler:
             await update_module_string(self.selected_module_str)
             """初始化组件"""
             if self.need_enter_student_info:
-                self.prompt = self.enter_student_info_llm_prompt
-                self.change_system_prompt(self.prompt)
+                filled_prompt = self.enter_student_info_llm_prompt
+                self.change_system_prompt(filled_prompt)
                 self.logger.bind(tag=TAG).info(
                     f"初始化组件: 获取学生信息的prompt成功 {self.prompt[:50]}..."
                 )
@@ -334,8 +334,8 @@ class ConnectionHandler:
                                               content=history_message.get('content')))
             else:
                 if self.config.get("prompt") is not None:
-                    self.prompt = self.__format_prompt(self.config["prompt"])
-                    self.change_system_prompt(self.prompt)
+                    filled_prompt = self.__format_prompt(self.config["prompt"])
+                    self.change_system_prompt(filled_prompt)
                     self.logger.bind(tag=TAG).info(
                         f"初始化组件: prompt成功 {self.prompt[:50]}..."
                     )
@@ -1063,8 +1063,13 @@ class ConnectionHandler:
         # 全部信息已录入，切基础模型。并清空之前的聊天记录
         if not self.need_enter_student_info:
             self.dialogue.clear_history()
-            self.prompt = self.__format_prompt(self.config["prompt"])
-            self.change_system_prompt(self.prompt)
+            filled_prompt = self.__format_prompt(self.config["prompt"])
+            self.change_system_prompt(filled_prompt)
             self.logger.bind(tag=TAG).info(
                 f"切换prompt成功 {self.prompt[:50]}..."
             )
+
+    def change_daily_program_unavailable(self):
+        filled_prompt = self.prompt
+        filled_prompt = filled_prompt.replace("{{daily_program_available}}", f"{False}")
+        self.change_system_prompt(filled_prompt)
