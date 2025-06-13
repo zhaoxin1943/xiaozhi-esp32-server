@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 from config.logger import setup_logging
+from custom.request import record_lesson_completion
 from plugins_func.register import register_function, ActionResponse, Action, ToolType
 import os
 from urllib.parse import urlparse
@@ -39,6 +40,7 @@ def handle_daily_lesson_response(conn, is_agree: bool):
             return ActionResponse(
                 action=Action.RESPONSE, result="系统繁忙", response="请稍后再试"
             )
+        # fixme 一期先需第一个
         audio_url = conn.uncompleted_lessons[0]['audioUrl']
         lesson_name = conn.uncompleted_lessons[0]['lessonName']
         future = asyncio.run_coroutine_threadsafe(
@@ -49,6 +51,16 @@ def handle_daily_lesson_response(conn, is_agree: bool):
             try:
                 f.result()
                 conn.logger.bind(tag=TAG).info("播放课程完成")
+                # 更新课程学习状态
+                completion_future = asyncio.run_coroutine_threadsafe(
+                    record_lesson_completion(device_id=conn.device_id, lesson_id=conn.uncompleted_lessons[0]['id']),
+                    conn.loop
+                )
+                try:
+                    completion_future.result(timeout=10)
+                    conn.logger.bind(tag=TAG).info("课程学习状态更新成功")
+                except Exception as e:
+                    conn.logger.bind(tag=TAG).error(f"更新课程学习状态失败: {e}")
             except Exception as e:
                 conn.logger.bind(tag=TAG).error(f"播放课程失败: {e}")
 

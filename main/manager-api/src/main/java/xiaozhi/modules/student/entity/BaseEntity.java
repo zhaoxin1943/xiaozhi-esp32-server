@@ -21,7 +21,7 @@ public abstract class BaseEntity implements Serializable {
     private Date createDate;
 
     @Schema(description = "更改时间")
-    @TableField(fill = FieldFill.UPDATE)
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateDate;
 
     @Schema(description = "是否删除")
