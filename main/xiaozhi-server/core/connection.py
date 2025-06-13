@@ -157,6 +157,7 @@ class ConnectionHandler:
         self.need_enter_student_info = False
         self.enter_student_info_llm = None
         self.student_info = None
+        self.uncompleted_lessons = None
 
     async def handle_connection(self, ws):
         try:
@@ -1056,6 +1057,7 @@ class ConnectionHandler:
         # 全部信息已录入，切基础模型。并清空之前的聊天记录
         if not self.need_enter_student_info:
             self.dialogue.clear_history()
+            asyncio.run(self._get_student_info(self.device_id))
             filled_prompt = self._format_prompt(self.config["prompt"])
             self.change_system_prompt(filled_prompt)
             self.logger.bind(tag=TAG).info(
