@@ -56,11 +56,15 @@ def handle_daily_lesson_response(conn, is_agree: bool):
                     record_lesson_completion(device_id=conn.device_id, lesson_id=conn.uncompleted_lessons[0]['id']),
                     conn.loop
                 )
-                try:
-                    completion_future.result(timeout=10)
-                    conn.logger.bind(tag=TAG).info("课程学习状态更新成功")
-                except Exception as e:
-                    conn.logger.bind(tag=TAG).error(f"更新课程学习状态失败: {e}")
+
+                def log_completion_result(future):
+                    try:
+                        future.result()
+                        conn.logger.bind(tag=TAG).info("课程学习状态更新成功。")
+                    except Exception as e:
+                        conn.logger.bind(tag=TAG).error(f"更新课程学习状态失败: {e}")
+
+                completion_future.add_done_callback(log_completion_result)
             except Exception as e:
                 conn.logger.bind(tag=TAG).error(f"播放课程失败: {e}")
 
