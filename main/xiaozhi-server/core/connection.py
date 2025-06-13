@@ -49,8 +49,6 @@ TAG = __name__
 
 auto_import_modules("plugins_func.functions")
 
-FUNCTION_UPDATE_STUDENT_INFO = 'update_student_info'
-
 
 class TTSException(RuntimeError):
     pass
@@ -334,7 +332,7 @@ class ConnectionHandler:
                                               content=history_message.get('content')))
             else:
                 if self.config.get("prompt") is not None:
-                    filled_prompt = self.__format_prompt(self.config["prompt"])
+                    filled_prompt = self._format_prompt(self.config["prompt"])
                     self.change_system_prompt(filled_prompt)
                     self.logger.bind(tag=TAG).info(
                         f"初始化组件: prompt成功 {self.prompt[:50]}..."
@@ -408,7 +406,7 @@ class ConnectionHandler:
 
         return asr
 
-    def __format_prompt(self, prompt: str):
+    def _format_prompt(self, prompt: str):
         daily_lesson = None
         if self.uncompleted_lessons and len(self.uncompleted_lessons) > 0:
             daily_lesson = self.uncompleted_lessons[0]
@@ -764,11 +762,6 @@ class ConnectionHandler:
                     )
             if not bHasError:
                 response_message.clear()
-                if function_name == FUNCTION_UPDATE_STUDENT_INFO:
-                    function_arguments_data = json.loads(function_arguments)
-                    function_arguments_data[
-                        'field_value'] = f"{function_arguments_data['field_value']}__{self.device_id}__"
-                    function_arguments = json.dumps(function_arguments_data, ensure_ascii=False)
                 self.logger.bind(tag=TAG).info(
                     f"function_name={function_name}, function_id={function_id}, function_arguments={function_arguments}"
                 )
@@ -911,8 +904,8 @@ class ConnectionHandler:
                     )
                 )
                 self.chat(text, tool_call=True)
-                if function_name == FUNCTION_UPDATE_STUDENT_INFO:
-                    self.__handle_student_info_entered(text)
+                if result.callback:
+                    result.callback(text)
         elif result.action == Action.NOTFOUND or result.action == Action.ERROR:
             text = result.result
             self.tts.tts_one_sentence(self, ContentType.TEXT, content_detail=text)
@@ -1044,7 +1037,7 @@ class ConnectionHandler:
         except Exception as e:
             self.logger.bind(tag=TAG).error(f"超时检查任务出错: {e}")
 
-    def __handle_student_info_entered(self, text: str):
+    def _handle_student_info_entered(self, text: str):
         """
         动态检查用户信息录入情况
         """
@@ -1063,7 +1056,7 @@ class ConnectionHandler:
         # 全部信息已录入，切基础模型。并清空之前的聊天记录
         if not self.need_enter_student_info:
             self.dialogue.clear_history()
-            filled_prompt = self.__format_prompt(self.config["prompt"])
+            filled_prompt = self._format_prompt(self.config["prompt"])
             self.change_system_prompt(filled_prompt)
             self.logger.bind(tag=TAG).info(
                 f"切换prompt成功 {self.prompt[:50]}..."

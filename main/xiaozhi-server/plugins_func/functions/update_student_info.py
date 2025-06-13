@@ -29,13 +29,7 @@ update_student_info_tool = {
 }
 
 
-@register_function(name="update_student_info", desc=update_student_info_tool, type=ToolType.WAIT)
-def update_student_info(field_name, field_value):
-    match = re.search(pattern, field_value)
-    if match:
-        real_field_value = match.group(1)
-        device_id = match.group(2)
-        update_student_info_to_db(device_id, field_name, real_field_value)
-        return ActionResponse(Action.REQLLM, f"已更新{field_name}", None)
-    else:
-        return ActionResponse(Action.REQLLM, f"未成功更新{field_name}，请继续提问", None)
+@register_function(name="update_student_info", desc=update_student_info_tool, type=ToolType.WAIT_WITH_CONN)
+def update_student_info(conn, field_name, field_value):
+    update_student_info_to_db(conn.device_id, field_name, field_value)
+    return ActionResponse(Action.REQLLM, f"已更新{field_name}", None, callback=conn._handle_student_info_entered)

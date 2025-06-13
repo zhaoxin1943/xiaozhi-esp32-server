@@ -1,6 +1,7 @@
 from enum import Enum
 
 from config.logger import setup_logging
+import collections.abc
 
 TAG = __name__
 
@@ -36,10 +37,11 @@ class Action(Enum):
 
 
 class ActionResponse:
-    def __init__(self, action: Action, result, response):
+    def __init__(self, action: Action, result, response,callback: collections.abc.Callable | None = None):
         self.action = action  # 动作类型
         self.result = result  # 动作产生的结果
         self.response = response  # 直接回复的内容
+        self.callback = callback #回调，有些function call执行后，需要进一步的动作
 
 
 class FunctionItem:
